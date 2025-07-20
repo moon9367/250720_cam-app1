@@ -38,18 +38,29 @@ jobs:
     - name: Build APK
       run: ./gradlew assembleRelease
       
+    - name: List build outputs
+      run: |
+        echo "=== Build outputs ==="
+        find . -name "*.apk" -type f
+        echo "=== APK directory contents ==="
+        ls -la app/build/outputs/apk/release/ || echo "APK directory not found"
+        echo "=== Build directory structure ==="
+        find app/build -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
+        
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release
-        path: app/build/outputs/apk/release/app-release.apk
+        path: |
+          app/build/outputs/apk/release/*.apk
+          app/build/outputs/apk/release/app-release.apk
         retention-days: 30
         
     - name: Create Release
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: softprops/action-gh-release@v1
       with:
-        files: app/build/outputs/apk/release/app-release.apk
+        files: app/build/outputs/apk/release/*.apk
         tag_name: v${{ github.run_number }}
         name: Release v${{ github.run_number }}
         body: |

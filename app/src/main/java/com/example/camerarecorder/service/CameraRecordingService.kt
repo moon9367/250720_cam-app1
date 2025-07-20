@@ -11,6 +11,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.example.camerarecorder.R
 import com.example.camerarecorder.data.AppSettings
 import com.example.camerarecorder.util.FileManager
@@ -181,9 +183,9 @@ class CameraRecordingService : Service() {
             
             videoCapture = VideoCapture.withOutput(recorder)
             
-            // 카메라 바인딩 - LifecycleOwner 대신 Context 사용
+            // 카메라 바인딩 - ProcessLifecycleOwner 사용
             camera = cameraProvider.bindToLifecycle(
-                this as androidx.lifecycle.LifecycleOwner,
+                ProcessLifecycleOwner.get(),
                 cameraSelector,
                 videoCapture
             )
