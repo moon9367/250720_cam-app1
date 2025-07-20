@@ -1,0 +1,12 @@
+# Built application files
+*.apk
+*.aab
+app/release/
+app/debug/
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
