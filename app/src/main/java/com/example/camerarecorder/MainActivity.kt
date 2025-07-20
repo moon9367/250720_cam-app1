@@ -6,8 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -32,8 +34,34 @@ class MainActivity : AppCompatActivity() {
         Manifest.permission.CAMERA,
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO,
+        Manifest.permission.READ_MEDIA_AUDIO
     )
+    
+    private fun getRequiredPermissionsForVersion(): Array<String> {
+        val permissions = mutableListOf<String>()
+        
+        // 기본 권한 (모든 버전)
+        permissions.add(Manifest.permission.CAMERA)
+        permissions.add(Manifest.permission.RECORD_AUDIO)
+        
+        // Android 12 이하: 저장소 권한
+        if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.S_V2) {
+            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+        
+        // Android 13+: 미디어 권한
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
+            permissions.add(Manifest.permission.READ_MEDIA_AUDIO)
+        }
+        
+        return permissions.toTypedArray()
+    }
     
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -42,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         if (allGranted) {
             startCameraService()
         } else {
-            Toast.makeText(this, "필요한 권한이 허용되지 않았습니다", Toast.LENGTH_LONG).show()
+            showPermissionDeniedDialog()
         }
     }
     
@@ -114,8 +142,9 @@ class MainActivity : AppCompatActivity() {
     
     private fun checkPermissions(): Boolean {
         val permissionsToRequest = mutableListOf<String>()
+        val requiredPermissionsForVersion = getRequiredPermissionsForVersion()
         
-        for (permission in requiredPermissions) {
+        for (permission in requiredPermissionsForVersion) {
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(permission)
             }
@@ -127,6 +156,51 @@ class MainActivity : AppCompatActivity() {
         }
         
         return true
+    }
+    
+    private fun showPermissionDeniedDialog() {
+        val deniedPermissions = mutableListOf<String>()
+        val requiredPermissionsForVersion = getRequiredPermissionsForVersion()
+        
+        for (permission in requiredPermissionsForVersion) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                deniedPermissions.add(getPermissionName(permission))
+            }
+        }
+        
+        val permissionNames = deniedPermissions.joinToString(", ")
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("권한 필요")
+            .setMessage("이 앱은 다음 권한이 필요합니다:\n\n$permissionNames\n\n설정에서 권한을 허용해주세요.")
+            .setPositiveButton("설정으로 이동") { _, _ ->
+                openAppSettings()
+            }
+            .setNegativeButton("취소") { _, _ ->
+                Toast.makeText(this, "권한이 필요하여 녹화를 시작할 수 없습니다", Toast.LENGTH_LONG).show()
+            }
+            .setCancelable(false)
+            .show()
+    }
+    
+    private fun getPermissionName(permission: String): String {
+        return when (permission) {
+            Manifest.permission.CAMERA -> "카메라"
+            Manifest.permission.RECORD_AUDIO -> "마이크"
+            Manifest.permission.WRITE_EXTERNAL_STORAGE -> "파일 쓰기"
+            Manifest.permission.READ_EXTERNAL_STORAGE -> "파일 읽기"
+            Manifest.permission.READ_MEDIA_IMAGES -> "사진 접근"
+            Manifest.permission.READ_MEDIA_VIDEO -> "동영상 접근"
+            Manifest.permission.READ_MEDIA_AUDIO -> "오디오 접근"
+            else -> permission
+        }
+    }
+    
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", packageName, null)
+        }
+        startActivity(intent)
     }
     
     private fun startCameraService() {
