@@ -11,7 +11,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleService
 import com.example.camerarecorder.R
 import com.example.camerarecorder.data.AppSettings
 import com.example.camerarecorder.util.FileManager
@@ -23,7 +22,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlinx.coroutines.*
 
-class CameraRecordingService : LifecycleService() {
+class CameraRecordingService : Service() {
     
     private val binder = LocalBinder()
     private var cameraProvider: ProcessCameraProvider? = null
@@ -83,7 +82,6 @@ class CameraRecordingService : LifecycleService() {
     }
     
     override fun onBind(intent: Intent): IBinder {
-        super.onBind(intent)
         return binder
     }
     
@@ -183,9 +181,9 @@ class CameraRecordingService : LifecycleService() {
             
             videoCapture = VideoCapture.withOutput(recorder)
             
-            // 카메라 바인딩
+            // 카메라 바인딩 - LifecycleOwner 대신 Context 사용
             camera = cameraProvider.bindToLifecycle(
-                this,
+                this as androidx.lifecycle.LifecycleOwner,
                 cameraSelector,
                 videoCapture
             )
@@ -303,7 +301,7 @@ class CameraRecordingService : LifecycleService() {
         recording?.stop()
         recording = null
         
-        camera?.unbindAll()
+        cameraProvider?.unbindAll()
         camera = null
         videoCapture = null
         

@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.LifecycleService
 import com.example.camerarecorder.R
 import com.example.camerarecorder.data.AppSettings
 import com.example.camerarecorder.network.NasManager
@@ -16,7 +15,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.*
 
-class NasTransferService : LifecycleService() {
+class NasTransferService : Service() {
     
     private val nasManager = NasManager()
     private var settings: AppSettings? = null
@@ -50,7 +49,6 @@ class NasTransferService : LifecycleService() {
     }
     
     override fun onBind(intent: Intent): IBinder? {
-        super.onBind(intent)
         return null
     }
     
@@ -181,8 +179,8 @@ class NasTransferService : LifecycleService() {
                 }
             }
             
-            Logger.i("전송 완료: 성공 $successCount개, 실패 $failCount개")
-            updateNotification("전송 완료: 성공 $successCount개, 실패 $failCount개")
+            Logger.i("전송 완료: 성공 ${successCount}개, 실패 ${failCount}개")
+            updateNotification("전송 완료: 성공 ${successCount}개, 실패 ${failCount}개")
             
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()

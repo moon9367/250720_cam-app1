@@ -12,7 +12,7 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED,
-            Intent.ACTION_QUICKBOOT_POWERON -> {
+            "android.intent.action.QUICKBOOT_POWERON" -> {
                 Logger.i("부팅 완료 수신: ${intent.action}")
                 
                 // 설정 확인
